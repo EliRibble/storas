@@ -2,7 +2,12 @@ import argparse
 
 import storas.commands
 
-def run():
+def run() -> int:
+  """Run the main storas command.
+
+  Returns:
+    0 on success, nonzero on failure.
+  """
   parser = argparse.ArgumentParser()
 
   subparsers = parser.add_subparsers(title="command", help="The command to perform.")

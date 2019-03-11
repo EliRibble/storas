@@ -8,7 +8,8 @@ setup(
     author = "Eli Ribble",
     extras_require = {
         "develop" : [
-            "nose2"
+            "mypy==0.670",
+            "nose2",
         ]
     },
     install_requires = [
