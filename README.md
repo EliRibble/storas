@@ -10,3 +10,9 @@ tool. It aims to do the following:
 ## Etymology
 
 This is what I got for the Gaelic translation of "repository". 
+
+## Hacking
+
+Clone the repository. Then run `pip install -e .[develop]` in the cloned
+repository. This should install all the developer dependencies. Then you run
+`pre-commit install` to setup the pre-commit hooks.
