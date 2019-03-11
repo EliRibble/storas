@@ -10,6 +10,7 @@ setup(
         "develop" : [
             "mypy==0.670",
             "nose2",
+            "pre-commit==1.14.4",
         ]
     },
     install_requires = [

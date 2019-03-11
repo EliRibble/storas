@@ -19,3 +19,4 @@ def run() -> int:
   args = parser.parse_args()
 
   args.command(args)
+  return 0
