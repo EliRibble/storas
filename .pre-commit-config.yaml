@@ -3,3 +3,8 @@
   hooks:
     - id: mypy
       exclude: bin/storas
+- repo: https://github.com/pre-commit/mirrors-pylint
+  rev: 'v2.3.1'
+  hooks:
+    - id: pylint
+      exclude: bin/storas

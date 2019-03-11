@@ -1,3 +1,4 @@
+"""Installer logic. Used by pip."""
 from setuptools import setup
 
 setup(
@@ -11,6 +12,7 @@ setup(
             "mypy==0.670",
             "nose2",
             "pre-commit==1.14.4",
+            "pylint==2.3.1",
         ]
     },
     install_requires = [
@@ -20,6 +22,6 @@ setup(
     ],
     packages = ['storas'],
     package_data = {
-        'storas' : ['storas/*'],
+       'storas' : ['storas/*'],
     },
 )
