@@ -1,6 +1,7 @@
 """Main entrypoint module. Used by bin/storas."""
 import argparse
 import logging
+import os
 import subprocess
 
 import storas.commands
@@ -15,11 +16,20 @@ def run() -> int:
 	parser.add_argument("--verbose", action="store_true", help="Show more verbose logging")
 
 	subparsers = parser.add_subparsers(title="command", help="The command to perform.")
+
 	init = subparsers.add_parser("init")
 	init.set_defaults(command=storas.commands.init)
 	init.add_argument("-b", "--branch", default="master", help="The branch to use for the manifest.")
 	init.add_argument("-u", "--url", required=True, help="The URL to pull the manifest file from")
 
+	show = subparsers.add_parser("show")
+	show.set_defaults(command=storas.commands.show)
+	show.add_argument("manifest", help="The manifest to show")
+
+	sync = subparsers.add_parser("sync")
+	sync.set_defaults(command=storas.commands.sync)
+	sync.add_argument("-j", "--max-parallelism", type=int, default=os.cpu_count()*2, help="The max number of subprocesses to run at a time.")
+	
 	args = parser.parse_args()
 
 	logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)

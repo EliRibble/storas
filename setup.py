@@ -16,6 +16,7 @@ setup(
         ]
     },
     install_requires = [
+		"tabulate==0.8.3",
     ],
     scripts = [
         'bin/storas',
