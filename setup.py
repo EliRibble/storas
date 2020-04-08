@@ -13,6 +13,7 @@ setup(
             "nose2",
             "pre-commit==1.14.4",
             "pylint==2.3.1",
+            "wheel",
         ]
     },
     install_requires=[
