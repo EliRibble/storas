@@ -76,7 +76,7 @@ class Manifest():
 		return result
 
 	@property
-	def projects(self) -> Iterable[Project]:
+	def projects(self) -> Iterable["Project"]:
 		"Iterate over all projects."
 		for manifest in self.includes:
 			for project in manifest.projects:
