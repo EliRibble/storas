@@ -1,28 +1,28 @@
 """Installer logic. Used by pip."""
-from setuptools import setup
+from setuptools import setup # type: ignore
 
 setup(
-    name = "storas",
-    version = "0.1",
-    description = "A replacement for Android's repo tool",
-    url = None,
-    author = "Eli Ribble",
-    extras_require = {
+    name="storas",
+    version="0.1",
+    description="A replacement for Android's repo tool",
+    url=None,
+    author="Eli Ribble",
+    extras_require={
         "develop" : [
-            "mypy==0.670",
+            "mypy==0.770",
             "nose2",
             "pre-commit==1.14.4",
             "pylint==2.3.1",
         ]
     },
-    install_requires = [
+    install_requires=[
 		"tabulate==0.8.3",
     ],
-    scripts = [
+    scripts=[
         'bin/storas',
     ],
-    packages = ['storas'],
-    package_data = {
+    packages=['storas'],
+    package_data={
        'storas' : ['storas/*'],
     },
 )

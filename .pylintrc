@@ -139,9 +139,7 @@ disable=print-statement,
         deprecated-sys-function,
         exception-escape,
         comprehension-escape,
-        # Don't be obsessive about whitespace. For example, maybe I want to have
-        # spaces around my kwargs because that makes it more readable to me
-        bad-whitespace,
+        # Because I can do my own indentation, thank you very much
         bad-continuation
 
 # Enable the message, report, category or checker with the given id(s). You can

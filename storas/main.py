@@ -6,6 +6,11 @@ import subprocess
 
 import storas.commands
 
+def _default_parallelism() -> int:
+	cpus = os.cpu_count()
+	return cpus*2 if cpus else 2
+
+
 def run() -> int:
 	"""Run the main storas command.
 
@@ -28,8 +33,11 @@ def run() -> int:
 
 	sync = subparsers.add_parser("sync")
 	sync.set_defaults(command=storas.commands.sync)
-	sync.add_argument("-j", "--max-parallelism", type=int, default=os.cpu_count()*2, help="The max number of subprocesses to run at a time.")
-	
+	sync.add_argument("-j", "--max-parallelism",
+		type=int,
+		default=_default_parallelism(),
+		help="The max number of subprocesses to run at a time.")
+
 	args = parser.parse_args()
 
 	logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)

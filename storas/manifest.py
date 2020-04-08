@@ -1,8 +1,7 @@
 """Module for dealing with manifest files."""
-import collections
 import logging
 import os
-import typing
+from typing import Dict, Iterable, List, Optional
 import urllib.parse
 import xml.etree.ElementTree
 
@@ -14,43 +13,53 @@ class ManifestParseError(Exception):
 	"""Indicates a bad manifest file was found."""
 
 class Remote():
-	def __init__(self, name: typing.Text, fetch: typing.Text, review: typing.Text):
+	"A remote."
+	def __init__(self,
+		name: str,
+		fetch: Optional[str],
+		review: Optional[str]):
 		self.fetch = urllib.parse.urlparse(fetch)
-		self.fetch_host = self.fetch.netloc.split(".")[0]
+		self.fetch_host = str(self.fetch.netloc).split(".")[0]
 		self.name = name
 		self.review = urllib.parse.urlparse(review)
+
+	def __eq__(self, other: object) -> bool:
+		if not isinstance(other, Remote):
+			raise NotImplementedError()
+		return all([
+			self.fetch == other.fetch,
+			self.fetch_host == other.fetch_host,
+			self.name == other.name,
+			self.review == other.review,
+		])
 
 	def __repr__(self):
 		return str(self)
 
 	def __str__(self):
 		return "Remote {name} review {review} fetch {fetch}".format(
-			fetch = self.fetch,
-			name = self.name,
-			review = self.review,
+			fetch=self.fetch,
+			name=self.name,
+			review=self.review,
 		)
 
 class Manifest():
 	"""Represents a bundle of manifest files."""
 
-	def __init__(self, path: typing.Text):
-		self.defaults = {}
-		self.includes = []
+	def __init__(self, path: str):
+		self.defaults: Dict[str, str] = {}
+		self.includes: List[Manifest] = []
 		self.path = path
-		self._projects = {}
-		self.remotes = {}
-
-	def get_remote(self, remote_name) -> Remote:
-		for remote in self.remotes:
-			if remote.name == remote_name:
-				return remote
-		raise IndexError("No such remote '{}'".format(remote_name))
+		self._projects: Dict[str, Project] = {}
+		self.remotes: Dict[str, Remote] = {}
 
 	@staticmethod
-	def parse(path: typing.Text, tree: xml.etree.ElementTree.ElementTree) -> "Manifest":
+	def parse(path: str, tree: xml.etree.ElementTree.ElementTree) -> "Manifest":
+		"Parse a manifest from an xml tree."
+		# pylint: disable=protected-access
 		root = tree.getroot()
 		if not root.tag == "manifest":
-			raise BadManifestError("Root node is not 'manifest'")
+			raise ManifestParseError("Root node is not 'manifest'")
 		result = Manifest(path)
 		for child in root.getchildren():
 			if child.tag == "default":
@@ -67,7 +76,8 @@ class Manifest():
 		return result
 
 	@property
-	def projects(self):
+	def projects(self) -> Iterable[Project]:
+		"Iterate over all projects."
 		for manifest in self.includes:
 			for project in manifest.projects:
 				yield project
@@ -102,62 +112,82 @@ class Manifest():
 		path = node.attrib.get("path")
 		project = Project(
 			self,
-			name = node.attrib.get("name"),
-			parent = None,
-			path = path,
-			remote = node.attrib.get("remote"),
-			revision = node.attrib.get("revision"),
-			sheriff = node.attrib.get("sheriff"),
+			name=node.attrib["name"],
+			parent=None,
+			path=path,
+			remote=node.attrib["remote"],
+			revision=node.attrib.get("revision"),
+			sheriff=node.attrib.get("sheriff"),
 		)
 		self._projects[project.name] = project
 		LOGGER.debug("Added project %s", project.name)
 
 	def _handle_remote(self, node: xml.etree.ElementTree.Element) -> None:
 		remote = Remote(
-			fetch = node.attrib.get("fetch"),
-			name = node.attrib.get("name"),
-			review = node.attrib.get("review"),
+			fetch=node.attrib.get("fetch"),
+			name=node.attrib["name"],
+			review=node.attrib.get("review"),
 		)
 		self.remotes[remote.name] = remote
 		LOGGER.debug("Added remote %s", remote.name)
-		
+
 class Project():
 	"A single project in a manifest."
-	def __init__(self,
+	def __init__(self, # pylint: disable=too-many-arguments
 			manifest: Manifest,
-			name: typing.Text,
-			remote: typing.Text,
-			path: typing.Text=None,
-			revision: typing.Text=None,
-			parent: "Project"=None,
-			sheriff: typing.Text=None,
+			name: str,
+			remote: str,
+			path: str = None,
+			revision: str = None,
+			parent: "Project" = None,
+			sheriff: str = None,
 		):
 		self.manifest = manifest
 		self.name = name
 		self.parent = parent
 		self.path = path or name
 		self._remote = remote
-		self.revision = revision or manifest.defaults.get("revision", "master")
+		self._revision = revision or manifest.defaults.get("revision", "master")
 		self.sheriff = sheriff
 
 	@property
-	def remote(self):
+	def remote(self) -> Remote:
+		"Get the remote used."
 		return self.manifest.remotes[self._remote]
+
+	@property
+	def revision(self) -> str:
+		"Get the revision this tracks"
+		if self._revision:
+			return self._revision
+		return self.manifest.defaults.get("revision", "master")
+
+	def __eq__(self, other: object) -> bool:
+		if not isinstance(other, Project):
+			raise NotImplementedError()
+		return all([
+			self.name == other.name,
+			self.parent == other.parent,
+			self.path == other.path,
+			self.remote == other.remote,
+			self.revision == other.revision,
+			self.sheriff == other.sheriff,
+		])
 
 	def __repr__(self):
 		return str(self)
 
 	def __str__(self):
 		return "Project {name} at {path} from {remote} on {revision}".format(
-			name = self.name,
-			path = self.path,
-			remote = self._remote,
-			revision = self.revision,
+			name=self.name,
+			path=self.path,
+			remote=self._remote,
+			revision=self.revision,
 		)
 
-def load(manifest_path: typing.Text) -> Manifest:
-	with open(manifest_path, "r") as r:
-		tree = xml.etree.ElementTree.parse(r)
+def load(manifest_path: str) -> Manifest:
+	"Load a manifest and return it."
+	with open(manifest_path, "r") as inp:
+		tree = xml.etree.ElementTree.parse(inp)
 	LOGGER.debug("Loaded manifest XML file '%s'", manifest_path)
 	return Manifest.parse(manifest_path, tree)
-
