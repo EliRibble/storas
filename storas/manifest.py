@@ -1,7 +1,7 @@
 """Module for dealing with manifest files."""
 import logging
 import os
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Set
 import urllib.parse
 import xml.etree.ElementTree
 
@@ -33,6 +33,9 @@ class Remote():
 			self.review == other.review,
 		])
 
+	def __hash__(self) -> int:
+		return hash((self.name, self.fetch, self.review))
+
 	def __repr__(self):
 		return str(self)
 
@@ -49,9 +52,12 @@ class Manifest():
 	def __init__(self, path: str):
 		self.defaults: Dict[str, str] = {}
 		self.includes: List[Manifest] = []
+		# The manifest that was the source of the '<include>' that pulled
+		# in this manifest.
+		self.parent: Optional[Manifest] = None
 		self.path = path
 		self._projects: Dict[str, Project] = {}
-		self.remotes: Dict[str, Remote] = {}
+		self._remotes: Dict[str, Remote] = {}
 
 	@staticmethod
 	def parse(path: str, tree: xml.etree.ElementTree.ElementTree) -> "Manifest":
@@ -84,13 +90,53 @@ class Manifest():
 		for project in self._projects.values():
 			yield project
 
+	def remote(self, name: str) -> Remote:
+		"""Get a particular remote by name.
+
+		Turns out that repo is...clever. You can refer to a remote in any manifest file so long as it
+		has been loaded via 'include' into the context that is shared by all manifests and repo is
+		perfectly happy. This means I can load up manifest A, which includes B, which defines a remote
+		X. Then manifest A can include another manifest C which can refer to X even though it doesn't
+		define it.
+
+		Yay.
+
+		We therefore traverse to the root manifest and then use it to build the set of all remotes
+		and search those.
+		"""
+		if self.parent:
+			return self.parent.remote(name)
+		all_remotes = self.remotes()
+		matching = []
+		for remote in all_remotes:
+			if remote.name == name:
+				matching.append(remote)
+		if len(matching) > 2:
+			raise Exception(
+				"Not sure which remote to use, there are {} which have the name '{}'".format(
+				len(matching), name))
+		if not matching:
+			raise KeyError("Unable to find a remote named '{}' in {}".format(name, self.path))
+		return matching[0]
+
+	def remotes(self) -> Set[Remote]:
+		"""Get the set of remotes known to this manifest.
+
+		This includes any remotes defined in this manifest or in any of its includes.
+		"""
+		all_remotes = set()
+		for include in self.includes:
+			for remote in include.remotes():
+				all_remotes.add(remote)
+		for remote in self._remotes.values():
+			all_remotes.add(remote)
+		return all_remotes
+
 	def _add_parents(self) -> None:
 		project_by_path = {p.path: p for p in self.projects}
 		for project in self.projects:
 			parent_dir = project.path
 			while parent_dir:
-				#if parent_dir == "chromium/src":
-					#import pdb;pdb.set_trace()
 				parent_dir, _ = os.path.split(parent_dir)
 				if parent_dir in project_by_path:
 					project.parent = project_by_path[parent_dir]
@@ -105,7 +151,7 @@ class Manifest():
 	def _handle_include(self, node: xml.etree.ElementTree.Element) -> None:
 		base = os.path.dirname(self.path)
 		newpath = os.path.join(base, node.attrib["name"])
-		submanifest = load(newpath)
+		submanifest = load(newpath, parent=self)
 		self.includes.append(submanifest)
 
 	def _handle_project(self, node: xml.etree.ElementTree.Element) -> None:
@@ -128,7 +174,7 @@ class Manifest():
 			name=node.attrib["name"],
 			review=node.attrib.get("review"),
 		)
-		self.remotes[remote.name] = remote
+		self._remotes[remote.name] = remote
 		LOGGER.debug("Added remote %s", remote.name)
 
 class Project():
@@ -153,7 +199,7 @@ class Project():
 	@property
 	def remote(self) -> Remote:
 		"Get the remote used."
-		return self.manifest.remotes[self._remote]
+		return self.manifest.remote(self._remote)
 
 	@property
 	def revision(self) -> str:
@@ -185,9 +231,12 @@ class Project():
 			revision=self.revision,
 		)
 
-def load(manifest_path: str) -> Manifest:
+def load(manifest_path: str, parent: Optional[Manifest] = None) -> Manifest:
 	"Load a manifest and return it."
 	with open(manifest_path, "r") as inp:
 		tree = xml.etree.ElementTree.parse(inp)
 	LOGGER.debug("Loaded manifest XML file '%s'", manifest_path)
-	return Manifest.parse(manifest_path, tree)
+	result = Manifest.parse(manifest_path, tree)
+	if parent:
+		result.parent = parent
+	return result
