@@ -1,11 +1,13 @@
 # storas
 
-Storas is a replacement for the AOSP (Android Open Source Project)'s 'repo'
-tool. It aims to do the following:
+Storas was originally designed as a replacement for the AOSP
+(Android Open Source Project)'s 'repo' tool. It aims to do the following.
 
-1. Not break all the time in obscure ways.
-1. Leverage git submodules as much as possible for tighter git integration.
-1. Be native Python 3.
+Turns out I don't like 'repo' and don't want to re-implement it anyways
+because I don't think it, as a tool, is a good idea.
+
+So instead this repository just became a toolkit for dealing with 'repo'
+manifest files. I use them to help create tools for migrating off of 'repo'.
 
 ## Etymology
 
