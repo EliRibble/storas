@@ -196,6 +196,9 @@ class Project():
 		self._revision = revision or manifest.defaults.get("revision", "master")
 		self.sheriff = sheriff
 
+	def __hash__(self) -> int:
+		return hash((self.name, self.remote, self.path, self.revision))
+
 	@property
 	def remote(self) -> Remote:
 		"Get the remote used."
