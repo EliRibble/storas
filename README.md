@@ -15,6 +15,21 @@ This is what I got for the Gaelic translation of "repository".
 
 ## Hacking
 
-Clone the repository. Then run `pip install -e .[develop]` in the cloned
-repository. This should install all the developer dependencies. Then you run
-`pre-commit install` to setup the pre-commit hooks.
+You'll want to install the developer dependencies:
+
+```
+pip install -e .[develop]
+```
+
+This will include `nose2`, which is the test runner of choice. After you make modifications you can run tests with
+
+```
+nose2
+```
+
+When you're satisfied you'll want to update the version number and do build-and-upload:
+
+```
+python setup.py sdist bdist_wheel
+twine upload dist/* --verbose
+```
