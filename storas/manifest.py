@@ -36,10 +36,10 @@ class Remote():
 	def __hash__(self) -> int:
 		return hash((self.name, self.fetch, self.review))
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return str(self)
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return "Remote {name} review {review} fetch {fetch}".format(
 			fetch=self.fetch,
 			name=self.name,
@@ -183,10 +183,10 @@ class Project():
 			manifest: Manifest,
 			name: str,
 			remote: str,
-			path: str = None,
-			revision: str = None,
-			parent: "Project" = None,
-			sheriff: str = None,
+			path: Optional[str],
+			revision: Optional[str],
+			parent: Optional["Project"],
+			sheriff: Optional[str],
 		):
 		self.manifest = manifest
 		self.name = name
@@ -223,10 +223,10 @@ class Project():
 			self.sheriff == other.sheriff,
 		])
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return str(self)
 
-	def __str__(self):
+	def __str__(self) -> str:
 		return "Project {name} at {path} from {remote} on {revision}".format(
 			name=self.name,
 			path=self.path,
