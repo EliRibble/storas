@@ -151,7 +151,13 @@ class Manifest():
 	def _handle_include(self, node: xml.etree.ElementTree.Element) -> None:
 		base = os.path.dirname(self.path)
 		newpath = os.path.join(base, node.attrib["name"])
-		submanifest = load(newpath, parent=self)
+		# Most includes are strictly in the same directory. The special
+		# .repo/manifest.xml file may include files from .repo/manifests/
+		try:
+			submanifest = load(newpath, parent=self)
+		except FileNotFoundError:
+			newpath = os.path.join(base, "manifests", node.attrib["name"])
+			submanifest = load(newpath, parent=self)
 		self.includes.append(submanifest)
 
 	def _handle_project(self, node: xml.etree.ElementTree.Element) -> None:
