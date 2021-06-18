@@ -67,7 +67,7 @@ class Manifest():
 		if not root.tag == "manifest":
 			raise ManifestParseError("Root node is not 'manifest'")
 		result = Manifest(path)
-		for child in root.getchildren():
+		for child in root:
 			if child.tag == "default":
 				result._handle_default(child)
 			elif child.tag == "include":
