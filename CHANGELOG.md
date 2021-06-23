@@ -1,5 +1,9 @@
 # storas change log
 
+## 0.4
+
+* Fix project comparison with None
+
 ## 0.3
 
 * Remove use of deprecated XML api calls.

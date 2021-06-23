@@ -218,6 +218,8 @@ class Project():
 		return self.manifest.defaults.get("revision", "master")
 
 	def __eq__(self, other: object) -> bool:
+		if other is None:
+			return False
 		if not isinstance(other, Project):
 			raise NotImplementedError()
 		return all([
