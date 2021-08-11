@@ -1,4 +1,5 @@
 """Module for dealing with manifest files."""
+from dataclasses import dataclass
 import logging
 import os
 from typing import Dict, Iterable, List, Optional, Set
@@ -46,6 +47,12 @@ class Remote():
 			review=self.review,
 		)
 
+@dataclass
+class Superproject():
+	"A superproject."
+	name: str
+	remote: str
+
 class Manifest():
 	"""Represents a bundle of manifest files."""
 
@@ -58,6 +65,7 @@ class Manifest():
 		self.path = path
 		self._projects: Dict[str, Project] = {}
 		self._remotes: Dict[str, Remote] = {}
+		self._superproject: Optional[Superproject] = None
 
 	@staticmethod
 	def parse(path: str, tree: xml.etree.ElementTree.ElementTree) -> "Manifest":
@@ -76,6 +84,8 @@ class Manifest():
 				result._handle_project(child)
 			elif child.tag == "remote":
 				result._handle_remote(child)
+			elif child.tag == "superproject":
+				result._handle_superproject(child)
 			else:
 				raise NotImplementedError("No handler for {}".format(child.tag))
 		result._add_parents()
@@ -182,6 +192,13 @@ class Manifest():
 		)
 		self._remotes[remote.name] = remote
 		LOGGER.debug("Added remote %s", remote.name)
+
+	def _handle_superproject(self, node: xml.etree.ElementTree.Element) -> None:
+		self._superproject = Superproject(
+			name=node.attrib["name"],
+			remote=node.attrib["remote"],
+		)
+		LOGGER.debug("Added superproject %s", self._superproject.name)
 
 class Project():
 	"A single project in a manifest."

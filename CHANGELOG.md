@@ -1,5 +1,9 @@
 # storas change log
 
+## 0.5
+
+* Add support for superproject elements
+
 ## 0.4
 
 * Fix project comparison with None
