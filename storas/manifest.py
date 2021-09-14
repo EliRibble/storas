@@ -156,6 +156,20 @@ class Manifest():
 			all_remotes.add(remote)
 		return all_remotes
 
+	def save(self) -> None:
+		"""Save the manifest, and its includes, back to their original files.
+
+		This should incorporate any changes that have been manually made to the files.
+		"""
+		LOGGER.info("Saving %s", self.path)
+		for include in self.includes:
+			include.save()
+		with open(self.path, "wb") as out:
+			out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n".encode("UTF-8"))
+			for comment in self.top_level_comments:
+				out.write(("<!--" + comment + "-->\n").encode("UTF-8"))
+			self.tree.write(out)
+
 	def _add_parents(self) -> None:
 		project_by_path = {p.path: p for p in self.projects}
 		for project in self.projects:

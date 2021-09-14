@@ -4,6 +4,7 @@
 
 * Add support for "repo-hooks" element
 * Add support for comments in the manifest.
+* Add Manifest.save() method.
 
 ## 0.5
 
