@@ -5,6 +5,7 @@
 * Add support for "repo-hooks" element
 * Add support for comments in the manifest.
 * Add Manifest.save() method.
+* Fix bug where default "remote" value was not honored in Project class instantiation.
 
 ## 0.5
 

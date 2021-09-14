@@ -207,7 +207,7 @@ class Manifest():
 			name=node.attrib["name"],
 			parent=None,
 			path=path,
-			remote=node.attrib["remote"],
+			remote=node.attrib.get("remote", self.defaults.get("remote")),
 			revision=node.attrib.get("revision"),
 			sheriff=node.attrib.get("sheriff"),
 		)
