@@ -20,7 +20,7 @@ class Remote():
 		fetch: Optional[str],
 		review: Optional[str]):
 		self.fetch = urllib.parse.urlparse(fetch)
-		self.fetch_host = str(self.fetch.netloc).split(".")[0]
+		self.fetch_host = str(self.fetch.netloc).split(".", maxsplit=1)[0]
 		self.name = name
 		self.review = urllib.parse.urlparse(review)
 
@@ -48,6 +48,12 @@ class Remote():
 		)
 
 @dataclass
+class RepoHooks():
+	"A repo hooks definition."
+	enabled_list: Optional[str]
+	in_project: Optional[str]
+
+@dataclass
 class Superproject():
 	"A superproject."
 	name: str
@@ -56,15 +62,19 @@ class Superproject():
 class Manifest():
 	"""Represents a bundle of manifest files."""
 
-	def __init__(self, path: str):
+	def __init__(self, path: str, tree: xml.etree.ElementTree.ElementTree) -> None:
+		self.comments: List[str] = []
 		self.defaults: Dict[str, str] = {}
 		self.includes: List[Manifest] = []
 		# The manifest that was the source of the '<include>' that pulled
 		# in this manifest.
 		self.parent: Optional[Manifest] = None
 		self.path = path
+		self.top_level_comments: List[str] = []
+		self.tree = tree
 		self._projects: Dict[str, Project] = {}
 		self._remotes: Dict[str, Remote] = {}
+		self._repo_hooks: Optional[RepoHooks] = None
 		self._superproject: Optional[Superproject] = None
 
 	@staticmethod
@@ -74,9 +84,11 @@ class Manifest():
 		root = tree.getroot()
 		if not root.tag == "manifest":
 			raise ManifestParseError("Root node is not 'manifest'")
-		result = Manifest(path)
+		result = Manifest(path, tree)
 		for child in root:
-			if child.tag == "default":
+			if child.tag == xml.etree.ElementTree.Comment: # pylint: disable=comparison-with-callable
+				result._handle_comment(child)
+			elif child.tag == "default":
 				result._handle_default(child)
 			elif child.tag == "include":
 				result._handle_include(child)
@@ -84,6 +96,8 @@ class Manifest():
 				result._handle_project(child)
 			elif child.tag == "remote":
 				result._handle_remote(child)
+			elif child.tag == "repo-hooks":
+				result._handle_repohooks(child)
 			elif child.tag == "superproject":
 				result._handle_superproject(child)
 			else:
@@ -152,6 +166,10 @@ class Manifest():
 					project.parent = project_by_path[parent_dir]
 					break
 
+	def _handle_comment(self, node: xml.etree.ElementTree.Element) -> None:
+		# self.comments.append(node.text)
+		pass
+
 	def _handle_default(self, node: xml.etree.ElementTree.Element) -> None:
 		for attribute in node.attrib.keys():
 			assert attribute not in self.defaults
@@ -192,6 +210,12 @@ class Manifest():
 		)
 		self._remotes[remote.name] = remote
 		LOGGER.debug("Added remote %s", remote.name)
+
+	def _handle_repohooks(self, node: xml.etree.ElementTree.Element) -> None:
+		self._repo_hooks = RepoHooks(
+			in_project=node.attrib.get("in-project"),
+			enabled_list=node.attrib.get("enabled-list"),
+		)
 
 	def _handle_superproject(self, node: xml.etree.ElementTree.Element) -> None:
 		self._superproject = Superproject(
@@ -261,10 +285,23 @@ class Project():
 
 def load(manifest_path: str, parent: Optional[Manifest] = None) -> Manifest:
 	"Load a manifest and return it."
-	with open(manifest_path, "r") as inp:
-		tree = xml.etree.ElementTree.parse(inp)
+	with open(manifest_path, "r", encoding="utf-8") as inp:
+		tree_builder = xml.etree.ElementTree.TreeBuilder(insert_comments=True)
+		parser = xml.etree.ElementTree.XMLParser(target=tree_builder)
+		tree = xml.etree.ElementTree.parse(inp, parser=parser)
+	# Parse again for top-level comments
+	top_level_comments = []
+	with open(manifest_path, "r", encoding="utf-8") as inp:
+		has_seen_manifest = False
+		for event, element in xml.etree.ElementTree.iterparse(inp, events=("start", "comment")):
+			if event == "start" and element.tag == "manifest":
+				has_seen_manifest = True
+			if event == "comment" and not has_seen_manifest:
+				top_level_comments.append(element.text)
+
 	LOGGER.debug("Loaded manifest XML file '%s'", manifest_path)
 	result = Manifest.parse(manifest_path, tree)
+	result.top_level_comments = top_level_comments
 	if parent:
 		result.parent = parent
 	return result

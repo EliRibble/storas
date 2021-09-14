@@ -1,5 +1,10 @@
 # storas change log
 
+## 0.6
+
+* Add support for "repo-hooks" element
+* Add support for comments in the manifest.
+
 ## 0.5
 
 * Add support for superproject elements
