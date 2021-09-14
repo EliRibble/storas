@@ -185,9 +185,7 @@ class Manifest():
 		pass
 
 	def _handle_default(self, node: xml.etree.ElementTree.Element) -> None:
-		for attribute in node.attrib.keys():
-			assert attribute not in self.defaults
-			self.defaults.update(node.attrib)
+		self.defaults = node.attrib
 		LOGGER.debug("Updated defaults with %s", node.attrib)
 
 	def _handle_include(self, node: xml.etree.ElementTree.Element) -> None:
