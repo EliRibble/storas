@@ -207,7 +207,7 @@ class Manifest():
 			name=node.attrib["name"],
 			parent=None,
 			path=path,
-			remote=node.attrib.get("remote", self.defaults.get("remote")),
+			remote=node.attrib.get("remote", self.defaults.get("remote", "")),
 			revision=node.attrib.get("revision"),
 			sheriff=node.attrib.get("sheriff"),
 		)
@@ -298,7 +298,7 @@ class Project():
 def load(manifest_path: str, parent: Optional[Manifest] = None) -> Manifest:
 	"Load a manifest and return it."
 	with open(manifest_path, "r", encoding="utf-8") as inp:
-		tree_builder = xml.etree.ElementTree.TreeBuilder(insert_comments=True)
+		tree_builder = xml.etree.ElementTree.TreeBuilder(insert_comments=True) # type: ignore
 		parser = xml.etree.ElementTree.XMLParser(target=tree_builder)
 		tree = xml.etree.ElementTree.parse(inp, parser=parser)
 	# Parse again for top-level comments
