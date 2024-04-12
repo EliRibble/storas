@@ -211,8 +211,8 @@ class Manifest():
 			revision=node.attrib.get("revision"),
 			sheriff=node.attrib.get("sheriff"),
 		)
-		self._projects[project.name] = project
-		LOGGER.debug("Added project %s", project.name)
+		self._projects[project.path] = project
+		LOGGER.debug("Added project %s", project.path)
 
 	def _handle_remote(self, node: xml.etree.ElementTree.Element) -> None:
 		remote = Remote(

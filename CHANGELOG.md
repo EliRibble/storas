@@ -1,5 +1,9 @@
 # storas change log
 
+## 0.8
+
+* Store projects by path not by name.
+
 ## 0.6
 
 * Add support for "repo-hooks" element
